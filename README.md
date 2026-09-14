@@ -36,14 +36,14 @@ Ages at death are derived from birth and death dates rather than entered manuall
 The curated records live in four TSV files under `src/`. Each row contains:
 
 ```text
-id | name | born | died | nationality | category | gender | summary | Wikipedia slug
+id | name | born | died | nationality | category | gender | summary | Wikipedia slug | popularity
 ```
 
 The current dataset is deliberately editorial rather than exhaustive. Wikipedia links are retained as traceable references; factual/editorial review should happen before treating the dataset as publication-grade.
 
 ## Selection
 
-A deterministic seed chooses up to three people for each age. Selection favors a mix of categories, nationalities and genders while keeping some canonical figures more likely to appear.
+A deterministic seed chooses a 16-person journey. Selection targets ten iconic people, five well-known people, and one discovery while preserving variety across categories, nationalities, genders, and ages. Sparse age pools favor familiar names even when that means some repetition between shuffles.
 
 The URL stores `age` and `seed`, so the same selection can be revisited or shared.
 

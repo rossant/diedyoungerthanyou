@@ -10,6 +10,10 @@ import {
 } from "../src/selection";
 
 describe("URL state parsing", () => {
+  it("defaults to age 30", () => {
+    expect(DEFAULT_AGE).toBe(30);
+  });
+
   it("accepts seed zero and rejects malformed seeds", () => {
     expect(parseSeed("0", 123)).toBe(0);
     expect(parseSeed("1.5", 123)).toBe(123);
@@ -71,9 +75,20 @@ describe("timeline selection", () => {
     const count = (tier: string) =>
       selection.filter(({ popularity }) => popularity === tier).length;
 
-    expect(count("iconic")).toBe(8);
+    expect(count("iconic")).toBe(10);
     expect(count("well-known")).toBe(5);
-    expect(count("discovery")).toBe(3);
+    expect(count("discovery")).toBe(1);
+  });
+
+  it("prefers well-known people when an age pool lacks iconic people", () => {
+    const sparse = people.filter((person) => person.deathAge < 25);
+    const selection = selectPeople(sparse, 12_345, 25);
+    const count = (tier: string) =>
+      selection.filter(({ popularity }) => popularity === tier).length;
+
+    expect(count("iconic")).toBe(3);
+    expect(count("well-known")).toBe(11);
+    expect(count("discovery")).toBe(2);
   });
 
   it("finds a reproducible shuffle with at most 35% overlap", () => {

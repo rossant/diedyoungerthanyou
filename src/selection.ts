@@ -2,12 +2,12 @@ import type { Person, PopularityTier } from "./data";
 
 export const MIN_AGE = 10;
 export const MAX_AGE = 100;
-export const DEFAULT_AGE = 41;
+export const DEFAULT_AGE = 30;
 export const MAX_SEED = 2_147_483_646;
 const POPULARITY_MIX: Record<PopularityTier, number> = {
-  iconic: 0.5,
-  "well-known": 0.3,
-  discovery: 0.2,
+  iconic: 0.625,
+  "well-known": 0.3125,
+  discovery: 0.0625,
 };
 const POPULARITY_TIERS = Object.keys(POPULARITY_MIX) as PopularityTier[];
 
@@ -145,9 +145,35 @@ export function findFreshSeed(
 ) {
   const resultSize = Math.min(Math.max(0, limit), pool.length);
   const freshAvailable = pool.filter(({ id }) => !previousIds.has(id)).length;
-  const unavoidableOverlap = Math.max(0, resultSize - freshAvailable);
+  const popularityTargets = allocatePopularityTargets(resultSize, pool);
+  let expectedTierOverlap = 0;
+  const tierConstrainedOverlap = POPULARITY_TIERS.reduce((total, tier) => {
+    const supplyInTier = pool.filter(
+      ({ popularity }) => popularity === tier,
+    ).length;
+    const previousInTier = pool.filter(
+      ({ id, popularity }) => popularity === tier && previousIds.has(id),
+    ).length;
+    const freshInTier = pool.filter(
+      ({ id, popularity }) => popularity === tier && !previousIds.has(id),
+    ).length;
+    if (supplyInTier) {
+      expectedTierOverlap +=
+        (popularityTargets[tier] * previousInTier) / supplyInTier;
+    }
+    return total + Math.max(0, popularityTargets[tier] - freshInTier);
+  }, 0);
+  const unavoidableOverlap = Math.max(
+    0,
+    resultSize - freshAvailable,
+    tierConstrainedOverlap,
+  );
   const requestedOverlap = Math.floor(resultSize * maxOverlapRatio);
-  const targetOverlap = Math.max(requestedOverlap, unavoidableOverlap);
+  const targetOverlap = Math.max(
+    requestedOverlap,
+    unavoidableOverlap,
+    Math.ceil(expectedTierOverlap),
+  );
   let bestSeed = initialSeed;
   let bestPeople = selectPeople(pool, bestSeed, referenceAge, limit);
   let bestOverlap = overlapCount(bestPeople, previousIds);
@@ -178,7 +204,7 @@ export function findFreshSeed(
     people: bestPeople,
     overlap: bestOverlap,
     targetOverlap,
-    degraded: unavoidableOverlap > requestedOverlap,
+    degraded: targetOverlap > requestedOverlap,
   };
 }
 
@@ -217,25 +243,20 @@ function allocatePopularityTargets(limit: number, pool: Person[]) {
     targets[remainders[(index - allocated) % remainders.length]]++;
   }
 
-  // Sparse age pools should not force the same small set of recognizable
-  // people into every shuffle. Cap a tier at half its supply when the other
-  // tiers can absorb the places, then deterministically redistribute them.
+  // If a sparse age pool cannot meet the requested mix, preserve familiarity:
+  // exhaust iconic people first, then well-known people, before adding more
+  // discovery entries.
   let overflow = 0;
   for (const tier of POPULARITY_TIERS) {
-    const freshnessCap = supply[tier]
-      ? Math.max(1, Math.floor(supply[tier] / 2))
-      : 0;
-    if (targets[tier] > freshnessCap) {
-      overflow += targets[tier] - freshnessCap;
-      targets[tier] = freshnessCap;
+    if (targets[tier] > supply[tier]) {
+      overflow += targets[tier] - supply[tier];
+      targets[tier] = supply[tier];
     }
   }
   while (overflow > 0) {
-    const tier = [...POPULARITY_TIERS]
-      .filter((candidate) => targets[candidate] < supply[candidate])
-      .sort((a, b) => {
-        return supply[b] - targets[b] - (supply[a] - targets[a]);
-      })[0];
+    const tier = POPULARITY_TIERS.find(
+      (candidate) => targets[candidate] < supply[candidate],
+    );
     if (!tier) break;
     targets[tier]++;
     overflow--;
