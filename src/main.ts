@@ -28,16 +28,25 @@ const ageNumber = document.querySelector<HTMLInputElement>("#age-number")!;
 const ageRange = document.querySelector<HTMLInputElement>("#age-range")!;
 const timeline = document.querySelector<HTMLElement>("#timeline-list")!;
 
-setAge(age, false);
+syncAgeControls();
 render();
 
-ageNumber.addEventListener("input", () => setAge(Number(ageNumber.value), false));
-ageNumber.addEventListener("change", () => setAge(Number(ageNumber.value), true));
+ageNumber.addEventListener("input", previewTypedAge);
+ageNumber.addEventListener("change", commitTypedAge);
 ageNumber.addEventListener("keydown", (event) => {
   if (event.key === "Enter") explore();
 });
-ageRange.addEventListener("input", () => setAge(Number(ageRange.value), false));
-ageRange.addEventListener("change", () => setAge(Number(ageRange.value), true));
+ageRange.addEventListener("input", () => {
+  age = Number(ageRange.value);
+  ageNumber.value = String(age);
+  updateRangeProgress();
+});
+ageRange.addEventListener("change", () => {
+  age = Number(ageRange.value);
+  syncAgeControls();
+  updateUrl();
+  render();
+});
 document.querySelector<HTMLButtonElement>(".explore")!.addEventListener("click", explore);
 document.querySelectorAll<HTMLButtonElement>(".shuffle").forEach((button) => button.addEventListener("click", () => {
   seed = Math.floor(Math.random() * 2_147_483_647);
@@ -45,20 +54,36 @@ document.querySelectorAll<HTMLButtonElement>(".shuffle").forEach((button) => but
   render();
 }));
 
+function previewTypedAge() {
+  if (ageNumber.value.trim() === "") return;
+  const value = Number(ageNumber.value);
+  if (!Number.isFinite(value)) return;
+  age = clamp(Math.round(value), MIN_AGE, MAX_AGE);
+  ageRange.value = String(age);
+  updateRangeProgress();
+}
+
+function commitTypedAge() {
+  const value = Number(ageNumber.value);
+  age = clamp(Number.isFinite(value) && ageNumber.value.trim() !== "" ? Math.round(value) : age, MIN_AGE, MAX_AGE);
+  syncAgeControls();
+  updateUrl();
+  render();
+}
+
 function explore() {
-  setAge(Number(ageNumber.value), true);
+  commitTypedAge();
   document.querySelector("#timeline")?.scrollIntoView({ behavior: "smooth" });
 }
 
-function setAge(value: number, commit: boolean) {
-  age = clamp(Math.round(value || 41), MIN_AGE, MAX_AGE);
+function syncAgeControls() {
   ageNumber.value = String(age);
   ageRange.value = String(age);
+  updateRangeProgress();
+}
+
+function updateRangeProgress() {
   ageRange.style.setProperty("--progress", `${((age - MIN_AGE) / (MAX_AGE - MIN_AGE)) * 100}%`);
-  if (commit) {
-    updateUrl();
-    render();
-  }
 }
 
 function render() {
