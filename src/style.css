@@ -31,6 +31,10 @@ body {
 }
 button, input { font: inherit; }
 button { color: inherit; }
+button:focus-visible, .brand:focus-visible, .age-range:focus-visible {
+  outline: 2px solid rgba(242, 196, 111, 0.82);
+  outline-offset: 5px;
+}
 
 .hero {
   position: relative;
