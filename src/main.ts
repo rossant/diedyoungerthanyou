@@ -25,9 +25,9 @@ app.innerHTML = `
     <div class="hero-stage">
       <div class="hero-copy">
         <span class="kicker-rule" aria-hidden="true"></span>
-        <p class="kicker">SAME SKY.<br>DIFFERENT TIMELINES.</p>
+        <p class="kicker">ONE AGE.<br>MANY LIVES.</p>
         <h1>How old<br> are you?</h1>
-        <p class="hero-promise">Discover famous people who died younger than you—and what they achieved in the time they had.</p>
+        <p class="hero-promise">Discover famous people who died younger than you and what they achieved in the time they had.</p>
       </div>
       <div class="age-control">
         <label class="sr-only" for="age-number">Your age</label>
@@ -45,12 +45,9 @@ app.innerHTML = `
     </header>
     <p class="sr-only" id="timeline-status" aria-live="polite"></p>
     <div class="timeline" id="timeline-list"></div>
-    <aside class="about" id="about">
-      <span class="about-rule" aria-hidden="true"></span>
-      <h2>Different lives.<br>A wider perspective.</h2>
-      <p><strong>A gentle note:</strong> this is a reflection on time and possibility, not a ranking of lives. Some entries involve illness, violence, or loss.</p>
-      <p>Birth and death dates come from the linked sources. Ages are calculated from exact dates. The ${people.length}-person collection uses editorial popularity tiers and seeded selection to balance familiar names with discoveries.</p>
-    </aside>
+    <footer class="about" id="about">
+      <p><strong>About</strong> A reflection on time, not a ranking of lives. Ages use the dates in each linked source.</p>
+    </footer>
   </section>
   <div class="menu-backdrop" hidden></div>
   <nav class="site-menu" id="site-menu" aria-label="Site menu" hidden>

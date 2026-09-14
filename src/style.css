@@ -100,7 +100,7 @@ input:focus-visible {
       rgba(4, 9, 14, 0.2) 66%,
       rgba(4, 9, 14, 0.74) 100%
     ),
-    url("./assets/earth-horizon.webp") center bottom / cover no-repeat;
+    url("./assets/earth-horizon-mobile.webp") center bottom / cover no-repeat;
 }
 .hero::after {
   content: "";
@@ -176,8 +176,7 @@ input:focus-visible {
   padding-top: 8px;
   transform: translateY(18px);
 }
-.kicker-rule,
-.about-rule {
+.kicker-rule {
   display: block;
   width: 29px;
   height: 1px;
@@ -585,69 +584,23 @@ input:focus-visible {
 }
 
 .about {
-  position: relative;
-  margin: 52px -27px 0;
-  min-height: 360px;
-  padding: 86px 38px max(48px, env(safe-area-inset-bottom));
-  overflow: hidden;
+  margin: 48px -27px 0;
+  padding: 30px 27px max(30px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
-  background:
-    linear-gradient(180deg, rgba(7, 12, 17, 0.05), rgba(7, 12, 17, 0.8)),
-    radial-gradient(ellipse at 70% 100%, #433127 0, #17171b 32%, #090e13 68%);
+  background: #060b10;
   color: var(--muted);
   text-align: center;
 }
-.about::before,
-.about::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  bottom: -12px;
-  width: 70%;
-  height: 115px;
-  background: #05090c;
-  clip-path: polygon(
-    0 100%,
-    0 80%,
-    13% 62%,
-    25% 72%,
-    38% 42%,
-    50% 64%,
-    62% 38%,
-    75% 69%,
-    88% 54%,
-    100% 78%,
-    100% 100%
-  );
-}
-.about::before {
-  left: -8%;
-}
-.about::after {
-  right: -8%;
-  transform: scaleX(-1);
-  opacity: 0.82;
-}
-.about > * {
-  position: relative;
-  z-index: 1;
-}
-.about-rule {
-  margin: 0 auto 17px;
-}
-.about h2 {
-  margin: 0 0 24px;
-  color: #c5c9cf;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1.4;
-}
 .about p {
-  max-width: 48ch;
-  margin: 0 auto 14px;
+  max-width: 62ch;
+  margin: 0 auto;
   font-size: 12px;
   line-height: 1.55;
+}
+.about strong {
+  margin-right: 0.45em;
+  color: #d5d8dc;
+  font-weight: 550;
 }
 
 .menu-backdrop {
@@ -720,6 +673,17 @@ input:focus-visible {
 }
 
 @media (min-width: 720px) {
+  .hero::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(4, 9, 14, 0.08) 0%,
+        rgba(4, 9, 14, 0.08) 42%,
+        rgba(4, 9, 14, 0.2) 66%,
+        rgba(4, 9, 14, 0.74) 100%
+      ),
+      url("./assets/earth-horizon-wide.webp") center center / cover no-repeat;
+  }
   .global-nav {
     padding-left: max(6vw, 54px);
     padding-right: max(6vw, 54px);
