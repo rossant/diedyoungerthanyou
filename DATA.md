@@ -10,9 +10,15 @@ Mix canonical figures with less obvious discoveries. Maintain meaningful represe
 
 ## Record
 
-Each row contains an ID, name, birth and death dates, a short nationality label, one primary display category, gender for selection balancing, one concise significance sentence and a traceable source slug.
+Each row contains an ID, name, birth and death dates, a short nationality label, one primary display category, an editorial gender grouping for selection balancing, one concise significance sentence and a traceable source slug. The schema accepts `woman`, `man`, `nonbinary`, and `unknown`; the current TSV happens to use only `woman` and `man`. These are editorial classifications, not a claim that gender is binary or that an identity has been inferred. Use `unknown` when reliable information is unavailable, and never fabricate identities to meet a quota.
 
 Age at death is computed from dates. Do not enter age manually.
+
+The browser loader and `npm run validate` share date, age, category, gender, required-field and Wikipedia-slug rules in `src/data-schema.js`. The validator also prints coverage metrics for categories, nationality labels (a deliberately rough geography proxy), birth eras, and age bands.
+
+Run `npm run validate:sources` during editorial review to check every Wikipedia slug against the live MediaWiki API. It is intentionally not part of CI because publication should not depend on an external service being available.
+
+Summary length has an editorial target of 40–180 characters and is reported as a warning rather than a hard gate, so a particularly useful sentence can be reviewed manually. The same principle applies to coverage metrics: they are monitoring signals, not fabricated quotas. Keep all ten categories represented, and use the metrics to notice concentration across fields, labels, eras and age bands during curation.
 
 Use nationality as compact historical context, not as a strict claim about modern citizenship. Multiple labels are acceptable when a single label would be misleading.
 

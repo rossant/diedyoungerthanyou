@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { categories, validateRawFields } from "../src/data-schema.js";
 
 const files = [
   "src/people-young.tsv",
@@ -6,57 +7,106 @@ const files = [
   "src/people-mid2.tsv",
   "src/people-late.tsv",
 ];
-const categories = new Set([
-  "science", "mathematics", "engineering", "music", "art",
-  "literature", "film", "activism", "politics", "exploration",
-]);
 const ids = new Set();
-let count = 0;
-let women = 0;
-const categoryCounts = new Map();
+const people = [];
+const warnings = [];
 
 for (const file of files) {
-  const lines = readFileSync(file, "utf8").trim().split("\n");
+  const lines = readFileSync(file, "utf8").trim().split(/\r?\n/);
   for (const [i, line] of lines.entries()) {
     const fields = line.split("|");
-    if (fields.length !== 9) fail(`${file}:${i + 1}: expected 9 fields, got ${fields.length}`);
-    const [id, name, born, died, nationality, category, gender, summary, wiki] = fields;
-    if (!/^[a-z0-9-]+$/.test(id)) fail(`${file}:${i + 1}: invalid id ${id}`);
+    if (fields.length !== 9)
+      fail(`${file}:${i + 1}: expected 9 fields, got ${fields.length}`);
+    const [id, name, born, died, nationality, category, gender, summary, wiki] =
+      fields;
     if (ids.has(id)) fail(`${file}:${i + 1}: duplicate id ${id}`);
     ids.add(id);
-    if (!name || !nationality || !summary || !wiki) fail(`${file}:${i + 1}: empty required field`);
-    if (!categories.has(category)) fail(`${file}:${i + 1}: unknown category ${category}`);
-    if (gender !== "woman" && gender !== "man") fail(`${file}:${i + 1}: invalid gender ${gender}`);
-    const age = ageAtDeath(born, died);
-    if (age < 0 || age > 120) fail(`${file}:${i + 1}: implausible age ${age}`);
-    count++;
-    if (gender === "woman") women++;
-    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+    const result = validateRawFields({
+      id,
+      name,
+      born,
+      died,
+      nationality,
+      category,
+      gender,
+      summary,
+      wiki,
+    });
+    for (const error of result.errors) fail(`${file}:${i + 1}: ${error}`);
+    for (const warning of result.warnings) warnings.push(`${id}: ${warning}`);
+    people.push({ born, nationality, category, gender, age: result.age });
   }
 }
 
-if (count < 120) fail(`dataset unexpectedly small: ${count}`);
-if (women / count < 0.3) fail(`women are only ${Math.round(100 * women / count)}% of dataset`);
-for (const category of categories) {
-  if (!categoryCounts.get(category)) fail(`empty category: ${category}`);
-}
+if (people.length < 120) fail(`dataset unexpectedly small: ${people.length}`);
+const women = people.filter(({ gender }) => gender === "woman").length;
+if (women / people.length < 0.3)
+  fail(
+    `editorial gender grouping is only ${Math.round((100 * women) / people.length)}% women`,
+  );
+for (const category of categories)
+  if (!people.some((person) => person.category === category))
+    fail(`empty category: ${category}`);
 
-console.log(`Validated ${count} people (${women} women, ${count - women} men).`);
-
-function ageAtDeath(born, died) {
-  const b = parseDate(born);
-  const d = parseDate(died);
-  return d.y - b.y - (d.m < b.m || (d.m === b.m && d.d < b.d) ? 1 : 0);
-}
-
-function parseDate(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) fail(`invalid date ${value}`);
-  const y = Number(match[1]), m = Number(match[2]), d = Number(match[3]);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) fail(`invalid date ${value}`);
-  return { y, m, d };
-}
+const countBy = (items, key) =>
+  Object.fromEntries(
+    [...new Set(items.map(key))]
+      .sort()
+      .map((value) => [
+        value,
+        items.filter((item) => key(item) === value).length,
+      ]),
+  );
+const ageBand = (age) =>
+  age < 18
+    ? "0–17"
+    : age < 30
+      ? "18–29"
+      : age < 50
+        ? "30–49"
+        : age < 70
+          ? "50–69"
+          : "70+";
+const era = (born) => {
+  const century = Math.floor((Number(born.slice(0, 4)) - 1) / 100) + 1;
+  const remainder = century % 100;
+  const suffix =
+    remainder >= 11 && remainder <= 13
+      ? "th"
+      : century % 10 === 1
+        ? "st"
+        : century % 10 === 2
+          ? "nd"
+          : century % 10 === 3
+            ? "rd"
+            : "th";
+  return `${century}${suffix} century`;
+};
+console.log(`Validated ${people.length} people.`);
+console.log(
+  "Editorial gender groups:",
+  countBy(people, (person) => person.gender),
+);
+console.log(
+  "Categories:",
+  countBy(people, (person) => person.category),
+);
+console.log(
+  "Nationality labels (geography proxy):",
+  countBy(people, (person) => person.nationality),
+);
+console.log(
+  "Birth eras:",
+  countBy(people, (person) => era(person.born)),
+);
+console.log(
+  "Age bands:",
+  countBy(people, (person) => ageBand(person.age)),
+);
+if (warnings.length)
+  console.log(
+    `Editorial warnings (${warnings.length}):\n${warnings.join("\n")}`,
+  );
 
 function fail(message) {
   console.error(message);
