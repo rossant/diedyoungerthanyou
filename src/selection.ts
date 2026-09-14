@@ -1,6 +1,6 @@
 import type { Person } from "./data";
 
-export const MIN_AGE = 8;
+export const MIN_AGE = 10;
 export const MAX_AGE = 100;
 export const DEFAULT_AGE = 41;
 export const MAX_SEED = 2_147_483_646;

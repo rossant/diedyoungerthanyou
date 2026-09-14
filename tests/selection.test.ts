@@ -18,7 +18,7 @@ describe("URL state parsing", () => {
   it("rounds and clamps finite ages", () => {
     expect(parseAge(null)).toBe(DEFAULT_AGE);
     expect(parseAge("40.6")).toBe(41);
-    expect(parseAge("2")).toBe(8);
+    expect(parseAge("2")).toBe(10);
     expect(parseAge("Infinity")).toBe(DEFAULT_AGE);
   });
 });

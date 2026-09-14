@@ -16,12 +16,61 @@ let age = parseAge(params.get("age"));
 let seed = parseSeed(params.get("seed"), randomSeed());
 let showBeyond = params.get("beyond") === "1";
 const app = document.querySelector<HTMLElement>("#app")!;
-app.innerHTML = `<section class="hero" id="top"><header class="site-head"><a class="brand" href="#top">DIED YOUNGER<br> THAN YOU</a><button class="shuffle" type="button" aria-label="Shuffle the people shown">Shuffle</button></header><div class="hero-copy"><p class="kicker">SAME TIME. DIFFERENT LIVES.</p><h1>How old<br> are you?</h1></div><div class="age-control"><label class="sr-only" for="age-number">Your age</label><input id="age-number" class="age-number" type="number" min="8" max="100" inputmode="numeric" autocomplete="off"><input id="age-range" class="age-range" type="range" min="8" max="100" step="1" aria-label="Your age slider"><div class="range-labels" aria-hidden="true"><span>8</span><span>100</span></div></div><button class="explore" type="button">Explore <span aria-hidden="true">→</span></button><p class="hero-note">Discover remarkable people who didn't live as long as you.</p><div class="horizon" aria-hidden="true"></div></section><section class="timeline-wrap" id="timeline" aria-labelledby="timeline-title"><header class="timeline-head"><div><h2 id="timeline-title">Remarkable lives, arranged by age.</h2><p>Start near your age, then travel backward.</p></div><button class="shuffle" type="button" aria-label="Shuffle the people shown">Shuffle</button></header><p class="sensitivity"><strong>A gentle note:</strong> this is a reflection on time and possibility, not a ranking of lives. Some entries involve illness, violence, or loss.</p><label class="beyond-toggle"><input id="beyond-toggle" type="checkbox"> Also show lives beyond my age</label><p class="sr-only" id="timeline-status" aria-live="polite"></p><div class="timeline" id="timeline-list"></div><aside class="about"><h2>About this timeline</h2><p>Birth and death dates come from the linked sources. Ages are calculated from exact dates, and the selection is a seeded shuffle designed to keep the journey varied. It is a snapshot, not a complete measure of a life.</p></aside></section>`;
+app.innerHTML = `
+  <section class="hero" id="top">
+    ${siteHeader()}
+    <div class="hero-copy">
+      <span class="kicker-rule" aria-hidden="true"></span>
+      <p class="kicker">SAME SKY.<br>DIFFERENT TIMELINES.</p>
+      <h1>How old<br> are you?</h1>
+    </div>
+    <div class="age-control">
+      <label class="sr-only" for="age-number">Your age</label>
+      <div class="age-entry"><input id="age-number" class="age-number" type="number" min="${MIN_AGE}" max="${MAX_AGE}" inputmode="numeric" autocomplete="off"></div>
+      <input id="age-range" class="age-range" type="range" min="${MIN_AGE}" max="${MAX_AGE}" step="1" aria-label="Your age slider">
+      <div class="range-labels" aria-hidden="true"><span>${MIN_AGE}</span><span>${MAX_AGE}</span></div>
+    </div>
+    <button class="explore" type="button">Explore <span aria-hidden="true">⟶</span></button>
+    <p class="hero-note">Discover remarkable people<br>who didn't live as long as you.</p>
+  </section>
+  <section class="timeline-wrap" id="timeline" aria-labelledby="timeline-title">
+    ${siteHeader("timeline-nav")}
+    <header class="timeline-head">
+      <h2 id="timeline-title">People who died before age <span id="timeline-age"></span></h2>
+      <p>Different lives. A wider perspective.</p>
+    </header>
+    <p class="sr-only" id="timeline-status" aria-live="polite"></p>
+    <div class="timeline" id="timeline-list"></div>
+    <aside class="about" id="about">
+      <span class="about-rule" aria-hidden="true"></span>
+      <h2>Different lives.<br>A wider perspective.</h2>
+      <p><strong>A gentle note:</strong> this is a reflection on time and possibility, not a ranking of lives. Some entries involve illness, violence, or loss.</p>
+      <p>Birth and death dates come from the linked sources. Ages are calculated from exact dates, and the seeded selection is designed to keep the journey varied.</p>
+    </aside>
+  </section>
+  <div class="menu-backdrop" hidden></div>
+  <nav class="site-menu" id="site-menu" aria-label="Site menu" hidden>
+    <button class="menu-close" type="button" aria-label="Close menu">×</button>
+    <p class="menu-eyebrow">DIED YOUNGER THAN YOU</p>
+    <a href="#top">Change your age</a>
+    <button class="menu-shuffle" type="button">Shuffle the people shown</button>
+    <label class="beyond-toggle"><input id="beyond-toggle" type="checkbox"> Show lives beyond my age</label>
+    <a href="#about">About this timeline</a>
+  </nav>`;
+
+function siteHeader(extraClass = "") {
+  return `<header class="site-head ${extraClass}"><a class="brand" href="#top">DIED YOUNGER<br> THAN YOU</a><button class="menu-toggle" type="button" aria-label="Open menu" aria-controls="site-menu" aria-expanded="false"><span></span><span></span><span></span></button></header>`;
+}
+
 const ageNumber = document.querySelector<HTMLInputElement>("#age-number")!,
   ageRange = document.querySelector<HTMLInputElement>("#age-range")!,
   timeline = document.querySelector<HTMLElement>("#timeline-list")!,
+  timelineAge = document.querySelector<HTMLElement>("#timeline-age")!,
   status = document.querySelector<HTMLElement>("#timeline-status")!,
-  beyondToggle = document.querySelector<HTMLInputElement>("#beyond-toggle")!;
+  beyondToggle = document.querySelector<HTMLInputElement>("#beyond-toggle")!,
+  siteMenu = document.querySelector<HTMLElement>("#site-menu")!,
+  menuBackdrop = document.querySelector<HTMLElement>(".menu-backdrop")!;
+let lastMenuTrigger: HTMLButtonElement | null = null;
 syncAgeControls();
 updateUrl();
 render();
@@ -39,18 +88,74 @@ ageRange.addEventListener("change", commitRangeAge);
 document
   .querySelector<HTMLButtonElement>(".explore")!
   .addEventListener("click", explore);
-document.querySelectorAll<HTMLButtonElement>(".shuffle").forEach((b) =>
-  b.addEventListener("click", () => {
+document
+  .querySelector<HTMLButtonElement>(".menu-shuffle")!
+  .addEventListener("click", () => {
     seed = randomSeed();
     updateUrl();
     render();
-  }),
-);
+    closeMenu();
+  });
 beyondToggle.addEventListener("change", () => {
   showBeyond = beyondToggle.checked;
   updateUrl();
   render();
 });
+document
+  .querySelectorAll<HTMLButtonElement>(".menu-toggle")
+  .forEach((button) =>
+    button.addEventListener("click", () => openMenu(button)),
+  );
+document
+  .querySelector<HTMLButtonElement>(".menu-close")!
+  .addEventListener("click", closeMenu);
+menuBackdrop.addEventListener("click", closeMenu);
+siteMenu.querySelectorAll("a").forEach((link) =>
+  link.addEventListener("click", () => {
+    closeMenu();
+  }),
+);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !siteMenu.hidden) closeMenu();
+  if (event.key === "Tab" && !siteMenu.hidden) containMenuFocus(event);
+});
+
+function openMenu(trigger: HTMLButtonElement) {
+  lastMenuTrigger = trigger;
+  siteMenu.hidden = false;
+  menuBackdrop.hidden = false;
+  document.body.classList.add("menu-open");
+  document
+    .querySelectorAll<HTMLButtonElement>(".menu-toggle")
+    .forEach((button) => button.setAttribute("aria-expanded", "true"));
+  document.querySelector<HTMLButtonElement>(".menu-close")!.focus();
+}
+
+function closeMenu() {
+  const wasOpen = !siteMenu.hidden;
+  siteMenu.hidden = true;
+  menuBackdrop.hidden = true;
+  document.body.classList.remove("menu-open");
+  document
+    .querySelectorAll<HTMLButtonElement>(".menu-toggle")
+    .forEach((button) => button.setAttribute("aria-expanded", "false"));
+  if (wasOpen) lastMenuTrigger?.focus();
+}
+
+function containMenuFocus(event: KeyboardEvent) {
+  const focusable = [
+    ...siteMenu.querySelectorAll<HTMLElement>("a,button,input"),
+  ];
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last?.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first?.focus();
+  }
+}
 function previewTypedAge() {
   if (!ageNumber.value.trim()) return;
   const value = Number(ageNumber.value);
@@ -94,6 +199,7 @@ function updateRangeProgress() {
 }
 function render() {
   timeline.replaceChildren();
+  timelineAge.textContent = String(age);
   const younger = selectPeople(
     people.filter((p) => p.deathAge < age),
     seed,
