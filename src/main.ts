@@ -24,6 +24,7 @@ app.innerHTML = `
         <span class="kicker-rule" aria-hidden="true"></span>
         <p class="kicker">SAME SKY.<br>DIFFERENT TIMELINES.</p>
         <h1>How old<br> are you?</h1>
+        <p class="hero-promise">Discover famous people who died younger than you—and what they achieved in the time they had.</p>
       </div>
       <div class="age-control">
         <label class="sr-only" for="age-number">Your age</label>
@@ -31,8 +32,7 @@ app.innerHTML = `
         <input id="age-range" class="age-range" type="range" min="${MIN_AGE}" max="${MAX_AGE}" step="1" aria-label="Your age slider">
         <div class="range-labels" aria-hidden="true"><span>${MIN_AGE}</span><span>${MAX_AGE}</span></div>
       </div>
-      <button class="explore" type="button">Explore <span aria-hidden="true">⟶</span></button>
-      <p class="hero-note">Discover remarkable people<br>who didn't live as long as you.</p>
+      <button class="explore" type="button">See who died younger than you <span aria-hidden="true">⟶</span></button>
     </div>
   </section>
   <section class="timeline-wrap" id="timeline" aria-labelledby="timeline-title">
