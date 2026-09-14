@@ -3,6 +3,7 @@ import { categoryLabel, people, type Person } from "./data";
 import {
   byDescendingDeathAge,
   clamp,
+  findFreshSeed,
   MAX_AGE,
   MIN_AGE,
   parseAge,
@@ -16,6 +17,7 @@ const params = new URLSearchParams(location.search);
 let age = parseAge(params.get("age"));
 let seed = parseSeed(params.get("seed"), randomSeed());
 let showBeyond = params.get("beyond") === "1";
+let visibleYoungerIds = new Set<string>();
 const app = document.querySelector<HTMLElement>("#app")!;
 app.innerHTML = `
   ${siteHeader("global-nav")}
@@ -47,7 +49,7 @@ app.innerHTML = `
       <span class="about-rule" aria-hidden="true"></span>
       <h2>Different lives.<br>A wider perspective.</h2>
       <p><strong>A gentle note:</strong> this is a reflection on time and possibility, not a ranking of lives. Some entries involve illness, violence, or loss.</p>
-      <p>Birth and death dates come from the linked sources. Ages are calculated from exact dates, and the seeded selection is designed to keep the journey varied.</p>
+      <p>Birth and death dates come from the linked sources. Ages are calculated from exact dates. The ${people.length}-person collection uses editorial popularity tiers and seeded selection to balance familiar names with discoveries.</p>
     </aside>
   </section>
   <div class="menu-backdrop" hidden></div>
@@ -94,7 +96,14 @@ document
 document
   .querySelector<HTMLButtonElement>(".menu-shuffle")!
   .addEventListener("click", () => {
-    seed = randomSeed();
+    const fresh = findFreshSeed(
+      people.filter((person) => person.deathAge < age),
+      visibleYoungerIds,
+      age,
+      randomSeed(),
+      JOURNEY_SIZE,
+    );
+    seed = fresh.seed;
     updateUrl();
     render();
     closeMenu();
@@ -222,6 +231,7 @@ function render() {
     age,
     JOURNEY_SIZE,
   );
+  visibleYoungerIds = new Set(younger.map(({ id }) => id));
   const beyond = showBeyond
     ? selectPeople(
         people.filter((p) => p.deathAge > age),

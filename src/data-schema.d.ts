@@ -1,5 +1,6 @@
 export const categories: string[];
 export const genders: string[];
+export const popularityTiers: string[];
 export const wikiSlugPattern: RegExp;
 export function parseDate(value: string): {
   year: number;
@@ -15,6 +16,7 @@ export function validateRawFields(fields: {
   nationality: string;
   category: string;
   gender: string;
+  popularity: string;
   summary: string;
   wiki: string;
 }): { errors: string[]; warnings: string[]; age: number };

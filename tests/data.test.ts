@@ -19,9 +19,25 @@ describe("ageAtDeath", () => {
 
 describe("curated people", () => {
   it("derives every stored age from its source dates", () => {
-    expect(people.length).toBeGreaterThanOrEqual(120);
+    expect(people.length).toBeGreaterThanOrEqual(300);
     for (const person of people) {
       expect(person.deathAge).toBe(ageAtDeath(person.born, person.died));
+    }
+  });
+
+  it("has enough depth and popularity variety for meaningful shuffles", () => {
+    expect(people.length).toBeGreaterThanOrEqual(300);
+    expect(people.length).toBeLessThanOrEqual(500);
+    expect(
+      people.filter(({ deathAge }) => deathAge < 30).length,
+    ).toBeGreaterThanOrEqual(60);
+    expect(
+      people.filter(({ deathAge }) => deathAge < 41).length,
+    ).toBeGreaterThanOrEqual(150);
+    for (const tier of ["iconic", "well-known", "discovery"]) {
+      expect(
+        people.filter(({ popularity }) => popularity === tier).length,
+      ).toBeGreaterThan(50);
     }
   });
 });

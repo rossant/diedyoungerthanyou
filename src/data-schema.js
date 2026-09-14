@@ -14,6 +14,7 @@ export const categories = [
 ];
 
 export const genders = ["woman", "man", "nonbinary", "unknown"];
+export const popularityTiers = ["iconic", "well-known", "discovery"];
 
 export function parseDate(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -57,6 +58,7 @@ export function validateRawFields({
   nationality,
   category,
   gender,
+  popularity,
   summary,
   wiki,
 }) {
@@ -67,6 +69,8 @@ export function validateRawFields({
   if (!categories.includes(category))
     errors.push(`unknown category ${category}`);
   if (!genders.includes(gender)) errors.push(`invalid gender ${gender}`);
+  if (!popularityTiers.includes(popularity))
+    errors.push(`invalid popularity tier ${popularity}`);
   const warnings = [];
   if (summary.length < 40 || summary.length > 180)
     warnings.push(`summary length ${summary.length} (target 40–180)`);

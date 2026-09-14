@@ -3,6 +3,7 @@ import { people } from "../src/data";
 import {
   byDescendingDeathAge,
   DEFAULT_AGE,
+  findFreshSeed,
   parseAge,
   parseSeed,
   selectPeople,
@@ -55,18 +56,56 @@ describe("timeline selection", () => {
     expect(
       largestCount(selection.map(({ nationality }) => nationality)),
     ).toBeLessThanOrEqual(3);
-    expect(new Set(selection.map(({ deathAge }) => deathAge)).size).toBe(
-      selection.length,
+    const ageCounts = selection.map(({ deathAge }) => deathAge);
+    expect(
+      Math.max(
+        ...[...new Set(ageCounts)].map(
+          (value) => ageCounts.filter((age) => age === value).length,
+        ),
+      ),
+    ).toBeLessThanOrEqual(2);
+  });
+
+  it("uses a deliberate iconic, well-known and discovery mix", () => {
+    const selection = selectPeople(eligible, 12_345, 41);
+    const count = (tier: string) =>
+      selection.filter(({ popularity }) => popularity === tier).length;
+
+    expect(count("iconic")).toBe(8);
+    expect(count("well-known")).toBe(5);
+    expect(count("discovery")).toBe(3);
+  });
+
+  it("finds a reproducible shuffle with at most 35% overlap", () => {
+    const initial = selectPeople(eligible, 1, 41);
+    const previousIds = new Set(initial.map(({ id }) => id));
+    const fresh = findFreshSeed(eligible, previousIds, 41, 987_654);
+    const replay = selectPeople(eligible, fresh.seed, 41);
+
+    expect(fresh.overlap).toBeLessThanOrEqual(5);
+    expect(replay.map(({ id }) => id)).toEqual(
+      fresh.people.map(({ id }) => id),
     );
   });
 
-  it("strongly favors recognizable people without excluding other lives", () => {
-    const selection = selectPeople(eligible, 12_345, 41);
-    const recognizable = selection.filter(({ featured }) => featured).length;
+  it.each([30, 41, 65, 100])(
+    "keeps repeated shuffles fresh at age %i",
+    (referenceAge) => {
+      const pool = people.filter(({ deathAge }) => deathAge < referenceAge);
+      let current = selectPeople(pool, 1, referenceAge);
 
-    expect(recognizable).toBeGreaterThanOrEqual(8);
-    expect(recognizable).toBeLessThan(selection.length);
-  });
+      for (let index = 0; index < 12; index++) {
+        const fresh = findFreshSeed(
+          pool,
+          new Set(current.map(({ id }) => id)),
+          referenceAge,
+          10_000 + index,
+        );
+        expect(fresh.overlap).toBeLessThanOrEqual(fresh.targetOverlap);
+        current = fresh.people;
+      }
+    },
+  );
 
   it("starts beyond-age selections with the closest eligible age", () => {
     const beyond = people.filter((person) => person.deathAge > 41);

@@ -6,6 +6,7 @@ const files = [
   "src/people-mid1.tsv",
   "src/people-mid2.tsv",
   "src/people-late.tsv",
+  "src/people-expanded.tsv",
 ];
 const ids = new Set();
 const people = [];
@@ -15,10 +16,20 @@ for (const file of files) {
   const lines = readFileSync(file, "utf8").trim().split(/\r?\n/);
   for (const [i, line] of lines.entries()) {
     const fields = line.split("|");
-    if (fields.length !== 9)
-      fail(`${file}:${i + 1}: expected 9 fields, got ${fields.length}`);
-    const [id, name, born, died, nationality, category, gender, summary, wiki] =
-      fields;
+    if (fields.length !== 10)
+      fail(`${file}:${i + 1}: expected 10 fields, got ${fields.length}`);
+    const [
+      id,
+      name,
+      born,
+      died,
+      nationality,
+      category,
+      gender,
+      summary,
+      wiki,
+      popularity,
+    ] = fields;
     if (ids.has(id)) fail(`${file}:${i + 1}: duplicate id ${id}`);
     ids.add(id);
     const result = validateRawFields({
@@ -29,16 +40,24 @@ for (const file of files) {
       nationality,
       category,
       gender,
+      popularity,
       summary,
       wiki,
     });
     for (const error of result.errors) fail(`${file}:${i + 1}: ${error}`);
     for (const warning of result.warnings) warnings.push(`${id}: ${warning}`);
-    people.push({ born, nationality, category, gender, age: result.age });
+    people.push({
+      born,
+      nationality,
+      category,
+      gender,
+      popularity,
+      age: result.age,
+    });
   }
 }
 
-if (people.length < 120) fail(`dataset unexpectedly small: ${people.length}`);
+if (people.length < 300) fail(`dataset unexpectedly small: ${people.length}`);
 const women = people.filter(({ gender }) => gender === "woman").length;
 if (women / people.length < 0.3)
   fail(
@@ -90,6 +109,10 @@ console.log(
 console.log(
   "Categories:",
   countBy(people, (person) => person.category),
+);
+console.log(
+  "Popularity tiers:",
+  countBy(people, (person) => person.popularity),
 );
 console.log(
   "Nationality labels (geography proxy):",

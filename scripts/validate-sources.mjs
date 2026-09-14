@@ -5,6 +5,7 @@ const files = [
   "src/people-mid1.tsv",
   "src/people-mid2.tsv",
   "src/people-late.tsv",
+  "src/people-expanded.tsv",
 ];
 const records = files.flatMap((file) =>
   readFileSync(file, "utf8")

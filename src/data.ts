@@ -4,6 +4,7 @@ import young from "./people-young.tsv?raw";
 import mid1 from "./people-mid1.tsv?raw";
 import mid2 from "./people-mid2.tsv?raw";
 import late from "./people-late.tsv?raw";
+import expanded from "./people-expanded.tsv?raw";
 import { categories, validateRawFields } from "./data-schema.js";
 export { ageAtDeath } from "./data-schema.js";
 
@@ -20,6 +21,7 @@ export type Category =
   | "exploration";
 
 export type Gender = "woman" | "man" | "nonbinary" | "unknown";
+export type PopularityTier = "iconic" | "well-known" | "discovery";
 
 export interface Person {
   id: string;
@@ -32,7 +34,7 @@ export interface Person {
   gender: Gender;
   summary: string;
   source: string;
-  featured: boolean;
+  popularity: PopularityTier;
 }
 
 export const categoryLabel: Record<Category, string> = {
@@ -49,47 +51,14 @@ export const categoryLabel: Record<Category, string> = {
 };
 
 const categorySet = new Set<Category>(categories as Category[]);
-const featured = new Set([
-  "evariste-galois",
-  "sophie-scholl",
-  "john-keats",
-  "amy-winehouse",
-  "jimi-hendrix",
-  "jean-michel-basquiat",
-  "franz-schubert",
-  "srinivasa-ramanujan",
-  "bruce-lee",
-  "mozart",
-  "ada-lovelace",
-  "rosalind-franklin",
-  "martin-luther-king",
-  "alan-turing",
-  "maryam-mirzakhani",
-  "jane-austen",
-  "franz-kafka",
-  "bob-marley",
-  "billie-holiday",
-  "freddie-mercury",
-  "albert-camus",
-  "george-orwell",
-  "james-clerk-maxwell",
-  "emmy-noether",
-  "marie-curie",
-  "grace-hopper",
-  "steve-jobs",
-  "virginia-woolf",
-  "blaise-pascal",
-  "raphael",
-]);
-
 function parsePeople(): Person[] {
   const seen = new Set<string>();
-  const lines = [young, mid1, mid2, late].flatMap((text) =>
+  const lines = [young, mid1, mid2, late, expanded].flatMap((text) =>
     text.trim().split("\n"),
   );
   const people = lines.map((line, index) => {
     const parts = line.split("|");
-    if (parts.length !== 9)
+    if (parts.length !== 10)
       throw new Error(`Data line ${index + 1} has ${parts.length} fields`);
     const [
       id,
@@ -101,9 +70,11 @@ function parsePeople(): Person[] {
       rawGender,
       summary,
       wiki,
+      rawPopularity,
     ] = parts;
     const category = rawCategory as Category;
     const gender = rawGender as Gender;
+    const popularity = rawPopularity as PopularityTier;
     if (!categorySet.has(category))
       throw new Error(`Unknown category for ${id}: ${rawCategory}`);
     const validation = validateRawFields({
@@ -114,6 +85,7 @@ function parsePeople(): Person[] {
       nationality,
       category,
       gender,
+      popularity,
       summary,
       wiki,
     });
@@ -133,10 +105,10 @@ function parsePeople(): Person[] {
       gender,
       summary,
       source: `https://en.wikipedia.org/wiki/${wiki}`,
-      featured: featured.has(id),
+      popularity,
     };
   });
-  if (people.length < 120)
+  if (people.length < 300)
     throw new Error(`Dataset unexpectedly small: ${people.length}`);
   const women = people.filter((person) => person.gender === "woman").length;
   if (women / people.length < 0.3)
