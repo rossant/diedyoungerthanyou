@@ -17,24 +17,25 @@ let seed = parseSeed(params.get("seed"), randomSeed());
 let showBeyond = params.get("beyond") === "1";
 const app = document.querySelector<HTMLElement>("#app")!;
 app.innerHTML = `
+  ${siteHeader("global-nav")}
   <section class="hero" id="top">
-    ${siteHeader()}
-    <div class="hero-copy">
-      <span class="kicker-rule" aria-hidden="true"></span>
-      <p class="kicker">SAME SKY.<br>DIFFERENT TIMELINES.</p>
-      <h1>How old<br> are you?</h1>
+    <div class="hero-stage">
+      <div class="hero-copy">
+        <span class="kicker-rule" aria-hidden="true"></span>
+        <p class="kicker">SAME SKY.<br>DIFFERENT TIMELINES.</p>
+        <h1>How old<br> are you?</h1>
+      </div>
+      <div class="age-control">
+        <label class="sr-only" for="age-number">Your age</label>
+        <div class="age-entry"><input id="age-number" class="age-number" type="number" min="${MIN_AGE}" max="${MAX_AGE}" inputmode="numeric" autocomplete="off"></div>
+        <input id="age-range" class="age-range" type="range" min="${MIN_AGE}" max="${MAX_AGE}" step="1" aria-label="Your age slider">
+        <div class="range-labels" aria-hidden="true"><span>${MIN_AGE}</span><span>${MAX_AGE}</span></div>
+      </div>
+      <button class="explore" type="button">Explore <span aria-hidden="true">⟶</span></button>
+      <p class="hero-note">Discover remarkable people<br>who didn't live as long as you.</p>
     </div>
-    <div class="age-control">
-      <label class="sr-only" for="age-number">Your age</label>
-      <div class="age-entry"><input id="age-number" class="age-number" type="number" min="${MIN_AGE}" max="${MAX_AGE}" inputmode="numeric" autocomplete="off"></div>
-      <input id="age-range" class="age-range" type="range" min="${MIN_AGE}" max="${MAX_AGE}" step="1" aria-label="Your age slider">
-      <div class="range-labels" aria-hidden="true"><span>${MIN_AGE}</span><span>${MAX_AGE}</span></div>
-    </div>
-    <button class="explore" type="button">Explore <span aria-hidden="true">⟶</span></button>
-    <p class="hero-note">Discover remarkable people<br>who didn't live as long as you.</p>
   </section>
   <section class="timeline-wrap" id="timeline" aria-labelledby="timeline-title">
-    ${siteHeader("timeline-nav")}
     <header class="timeline-head">
       <h2 id="timeline-title">People who died before age <span id="timeline-age"></span></h2>
       <p>Different lives. A wider perspective.</p>
@@ -69,7 +70,8 @@ const ageNumber = document.querySelector<HTMLInputElement>("#age-number")!,
   status = document.querySelector<HTMLElement>("#timeline-status")!,
   beyondToggle = document.querySelector<HTMLInputElement>("#beyond-toggle")!,
   siteMenu = document.querySelector<HTMLElement>("#site-menu")!,
-  menuBackdrop = document.querySelector<HTMLElement>(".menu-backdrop")!;
+  menuBackdrop = document.querySelector<HTMLElement>(".menu-backdrop")!,
+  globalNav = document.querySelector<HTMLElement>(".global-nav")!;
 let lastMenuTrigger: HTMLButtonElement | null = null;
 syncAgeControls();
 updateUrl();
@@ -119,6 +121,12 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !siteMenu.hidden) closeMenu();
   if (event.key === "Tab" && !siteMenu.hidden) containMenuFocus(event);
 });
+window.addEventListener("scroll", updateHeader, { passive: true });
+updateHeader();
+
+function updateHeader() {
+  globalNav.classList.toggle("is-scrolled", scrollY > innerHeight * 0.72);
+}
 
 function openMenu(trigger: HTMLButtonElement) {
   lastMenuTrigger = trigger;
@@ -162,6 +170,7 @@ function previewTypedAge() {
   if (!Number.isFinite(value)) return;
   age = clamp(Math.round(value), MIN_AGE, MAX_AGE);
   ageRange.value = String(age);
+  updateAgeDigits();
   updateRangeProgress();
 }
 function commitTypedAge() {
@@ -189,7 +198,11 @@ function syncAgeControls() {
   ageNumber.value = String(age);
   ageRange.value = String(age);
   beyondToggle.checked = showBeyond;
+  updateAgeDigits();
   updateRangeProgress();
+}
+function updateAgeDigits() {
+  ageNumber.style.setProperty("--age-digits", String(ageNumber.value.length));
 }
 function updateRangeProgress() {
   ageRange.style.setProperty(
@@ -285,10 +298,8 @@ function personCard(person: Person) {
   const dates = document.createElement("p");
   dates.className = "dates";
   dates.textContent = `${person.born.slice(0, 4)}–${person.died.slice(0, 4)}`;
-  article.append(dates);
   const summary = document.createElement("p");
   summary.textContent = person.summary;
-  article.append(summary);
   const source = document.createElement("a");
   source.className = "source";
   source.href = person.source;
@@ -296,7 +307,10 @@ function personCard(person: Person) {
   source.rel = "noopener noreferrer";
   source.textContent = "Source ↗";
   source.setAttribute("aria-label", `Wikipedia source for ${person.name}`);
-  article.append(source);
+  const utility = document.createElement("div");
+  utility.className = "person-utility";
+  utility.append(dates, source);
+  article.append(summary, utility);
   return article;
 }
 function userMarker() {
@@ -318,6 +332,7 @@ function userMarker() {
   const strong = document.createElement("strong");
   strong.textContent = "YOU ARE HERE";
   const text = document.createElement("p");
+  text.className = "sr-only";
   text.textContent =
     "The younger lives in this journey ended before the age you are now.";
   copy.append(strong, text);
