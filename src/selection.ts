@@ -4,6 +4,7 @@ export const MIN_AGE = 10;
 export const MAX_AGE = 100;
 export const DEFAULT_AGE = 41;
 export const MAX_SEED = 2_147_483_646;
+const FEATURED_RECOGNIZABILITY_BOOST = 0.85;
 
 export function parseAge(value: string | null, fallback = DEFAULT_AGE) {
   if (value === null || value.trim() === "") return fallback;
@@ -40,10 +41,15 @@ export function selectPeople(
   const ageBandCount = new Map<number, number>();
   const exactAgeCount = new Map<number, number>();
 
-  // Guarantee that the journey begins as close as the dataset permits.
-  const closestAge = Math.max(...available.map((person) => person.deathAge));
+  // Guarantee that the journey includes a life as close to the reference age
+  // as the dataset permits, regardless of which side of it the pool contains.
+  const closestDistance = Math.min(
+    ...available.map((person) => Math.abs(referenceAge - person.deathAge)),
+  );
   const closest = available
-    .filter((person) => person.deathAge === closestAge)
+    .filter(
+      (person) => Math.abs(referenceAge - person.deathAge) === closestDistance,
+    )
     .sort(
       (a, b) =>
         seededValue(seed, `closest:${a.id}`) -
@@ -66,7 +72,9 @@ export function selectPeople(
         seed,
         `${referenceAge}:${chosen.length}:${candidate.id}`,
       );
-      score += candidate.featured ? 0.18 : 0;
+      // Favor broadly recognizable people without turning the result into a
+      // fixed celebrity list; the diversity penalties can still outweigh it.
+      score += candidate.featured ? FEATURED_RECOGNIZABILITY_BOOST : 0;
       score -=
         categories * 0.42 +
         nationalities * 0.3 +
@@ -105,6 +113,10 @@ export function selectPeople(
       (exactAgeCount.get(person.deathAge) ?? 0) + 1,
     );
   }
+}
+
+export function byDescendingDeathAge(a: Person, b: Person) {
+  return b.deathAge - a.deathAge || a.name.localeCompare(b.name);
 }
 
 export function clamp(value: number, minimum: number, maximum: number) {

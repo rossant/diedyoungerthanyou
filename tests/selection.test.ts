@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { people } from "../src/data";
 import {
+  byDescendingDeathAge,
   DEFAULT_AGE,
   parseAge,
   parseSeed,
@@ -56,6 +57,32 @@ describe("timeline selection", () => {
     ).toBeLessThanOrEqual(3);
     expect(new Set(selection.map(({ deathAge }) => deathAge)).size).toBe(
       selection.length,
+    );
+  });
+
+  it("strongly favors recognizable people without excluding other lives", () => {
+    const selection = selectPeople(eligible, 12_345, 41);
+    const recognizable = selection.filter(({ featured }) => featured).length;
+
+    expect(recognizable).toBeGreaterThanOrEqual(8);
+    expect(recognizable).toBeLessThan(selection.length);
+  });
+
+  it("starts beyond-age selections with the closest eligible age", () => {
+    const beyond = people.filter((person) => person.deathAge > 41);
+    const selection = selectPeople(beyond, 12_345, 41, 5);
+    const closestAge = Math.min(...beyond.map(({ deathAge }) => deathAge));
+
+    expect(selection[0].deathAge).toBe(closestAge);
+    expect(selection.every(({ deathAge }) => deathAge > 41)).toBe(true);
+  });
+
+  it("orders the complete timeline from oldest to youngest", () => {
+    const mixed = [people[0], people.at(-1)!, people[50], people[100]];
+    const ordered = [...mixed].sort(byDescendingDeathAge);
+
+    expect(ordered.map(({ deathAge }) => deathAge)).toEqual(
+      [...ordered.map(({ deathAge }) => deathAge)].sort((a, b) => b - a),
     );
   });
 });

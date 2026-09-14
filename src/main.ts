@@ -1,6 +1,7 @@
 import "./style.css";
 import { categoryLabel, people, type Person } from "./data";
 import {
+  byDescendingDeathAge,
   clamp,
   MAX_AGE,
   MIN_AGE,
@@ -37,7 +38,7 @@ app.innerHTML = `
   </section>
   <section class="timeline-wrap" id="timeline" aria-labelledby="timeline-title">
     <header class="timeline-head">
-      <h2 id="timeline-title">People who died before age <span id="timeline-age"></span></h2>
+      <h2 id="timeline-title"></h2>
       <p>Different lives. A wider perspective.</p>
     </header>
     <p class="sr-only" id="timeline-status" aria-live="polite"></p>
@@ -55,7 +56,7 @@ app.innerHTML = `
     <p class="menu-eyebrow">DIED YOUNGER THAN YOU</p>
     <a href="#top">Change your age</a>
     <button class="menu-shuffle" type="button">Shuffle the people shown</button>
-    <label class="beyond-toggle"><input id="beyond-toggle" type="checkbox"> Show lives beyond my age</label>
+    <label class="beyond-toggle"><input id="beyond-toggle" type="checkbox"> Show people who died after my age</label>
     <a href="#about">About this timeline</a>
   </nav>`;
 
@@ -66,7 +67,7 @@ function siteHeader(extraClass = "") {
 const ageNumber = document.querySelector<HTMLInputElement>("#age-number")!,
   ageRange = document.querySelector<HTMLInputElement>("#age-range")!,
   timeline = document.querySelector<HTMLElement>("#timeline-list")!,
-  timelineAge = document.querySelector<HTMLElement>("#timeline-age")!,
+  timelineTitle = document.querySelector<HTMLElement>("#timeline-title")!,
   status = document.querySelector<HTMLElement>("#timeline-status")!,
   beyondToggle = document.querySelector<HTMLInputElement>("#beyond-toggle")!,
   siteMenu = document.querySelector<HTMLElement>("#site-menu")!,
@@ -212,17 +213,36 @@ function updateRangeProgress() {
 }
 function render() {
   timeline.replaceChildren();
-  timelineAge.textContent = String(age);
+  timelineTitle.textContent = showBeyond
+    ? `People who died before and after age ${age}`
+    : `People who died before age ${age}`;
   const younger = selectPeople(
     people.filter((p) => p.deathAge < age),
     seed,
     age,
     JOURNEY_SIZE,
   );
+  const beyond = showBeyond
+    ? selectPeople(
+        people.filter((p) => p.deathAge > age),
+        seed,
+        age,
+        5,
+      )
+    : [];
+  if (beyond.length) {
+    const h = document.createElement("h3");
+    h.className = "beyond-heading";
+    h.textContent = `People who died after age ${age}`;
+    timeline.append(h);
+    beyond
+      .sort(byDescendingDeathAge)
+      .forEach((p) => timeline.append(ageBlock(p, true)));
+  }
   timeline.append(userMarker());
   if (younger.length) {
     younger
-      .sort((a, b) => b.deathAge - a.deathAge)
+      .sort(byDescendingDeathAge)
       .forEach((p) => timeline.append(ageBlock(p, false)));
   } else {
     const empty = document.createElement("p");
@@ -230,24 +250,7 @@ function render() {
     empty.textContent = `This collection has no entries below age ${age}. You can choose an older age or show lives beyond it.`;
     timeline.append(empty);
   }
-  if (showBeyond) {
-    const beyond = selectPeople(
-      people.filter((p) => p.deathAge >= age),
-      seed,
-      age,
-      5,
-    );
-    if (beyond.length) {
-      const h = document.createElement("h3");
-      h.className = "beyond-heading";
-      h.textContent = "Beyond your age";
-      timeline.append(h);
-      beyond
-        .sort((a, b) => a.deathAge - b.deathAge)
-        .forEach((p) => timeline.append(ageBlock(p, true)));
-    }
-  }
-  status.textContent = `${younger.length} lives shown before age ${age}${showBeyond ? ", with lives beyond your age below" : ""}.`;
+  status.textContent = `${younger.length} lives shown before age ${age}${beyond.length ? `, plus ${beyond.length} lives after it` : ""}.`;
   requestAnimationFrame(() =>
     timeline
       .querySelectorAll<HTMLElement>(".age-block,.user-marker")
