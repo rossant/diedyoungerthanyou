@@ -3,6 +3,7 @@ import { categoryLabel, people, type Person } from "./data";
 
 const MIN_AGE = 8;
 const MAX_AGE = 100;
+const MAX_PER_AGE = 3;
 const params = new URLSearchParams(location.search);
 let age = clamp(Number(params.get("age")) || 41, MIN_AGE, MAX_AGE);
 let seed = Number(params.get("seed")) || Math.floor(Math.random() * 2_147_483_647);
@@ -10,18 +11,18 @@ let seed = Number(params.get("seed")) || Math.floor(Math.random() * 2_147_483_64
 const app = document.querySelector<HTMLElement>("#app")!;
 app.innerHTML = `
 <section class="hero" id="top">
-  <header class="site-head"><a class="brand" href="#top">DIED YOUNGER<br>THAN YOU</a><button class="shuffle">Shuffle</button></header>
+  <header class="site-head"><a class="brand" href="#top">DIED YOUNGER<br>THAN YOU</a><button class="shuffle" type="button">Shuffle</button></header>
   <div class="hero-copy"><p class="kicker">SAME TIME. DIFFERENT LIVES.</p><h1>How old<br>are you?</h1></div>
   <div class="age-control">
-    <input id="age-number" class="age-number" type="number" min="8" max="100" inputmode="numeric" aria-label="Your age">
+    <input id="age-number" class="age-number" type="number" min="8" max="100" inputmode="numeric" autocomplete="off" aria-label="Your age">
     <input id="age-range" class="age-range" type="range" min="8" max="100" step="1" aria-label="Your age slider">
-    <div class="range-labels"><span>8</span><span>100</span></div>
+    <div class="range-labels" aria-hidden="true"><span>8</span><span>100</span></div>
   </div>
-  <button class="explore">Explore <span>→</span></button>
+  <button class="explore" type="button">Explore <span aria-hidden="true">→</span></button>
   <p class="hero-note">Discover remarkable people who didn't live as long as you.</p>
-  <div class="horizon"></div>
+  <div class="horizon" aria-hidden="true"></div>
 </section>
-<section class="timeline-wrap" id="timeline"><header class="timeline-head"><p>Remarkable lives, arranged by age.</p><button class="shuffle">Shuffle</button></header><div class="timeline" id="timeline-list"></div></section>`;
+<section class="timeline-wrap" id="timeline" aria-label="Remarkable lives arranged by age"><header class="timeline-head"><p>Remarkable lives, arranged by age.</p><button class="shuffle" type="button">Shuffle</button></header><div class="timeline" id="timeline-list"></div></section>`;
 
 const ageNumber = document.querySelector<HTMLInputElement>("#age-number")!;
 const ageRange = document.querySelector<HTMLInputElement>("#age-range")!;
@@ -32,24 +33,32 @@ render();
 
 ageNumber.addEventListener("input", () => setAge(Number(ageNumber.value), false));
 ageNumber.addEventListener("change", () => setAge(Number(ageNumber.value), true));
+ageNumber.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") explore();
+});
 ageRange.addEventListener("input", () => setAge(Number(ageRange.value), false));
 ageRange.addEventListener("change", () => setAge(Number(ageRange.value), true));
-document.querySelector<HTMLButtonElement>(".explore")!.addEventListener("click", () => {
-  setAge(Number(ageNumber.value), true);
-  document.querySelector("#timeline")?.scrollIntoView({ behavior: "smooth" });
-});
+document.querySelector<HTMLButtonElement>(".explore")!.addEventListener("click", explore);
 document.querySelectorAll<HTMLButtonElement>(".shuffle").forEach((button) => button.addEventListener("click", () => {
   seed = Math.floor(Math.random() * 2_147_483_647);
   updateUrl();
   render();
 }));
 
+function explore() {
+  setAge(Number(ageNumber.value), true);
+  document.querySelector("#timeline")?.scrollIntoView({ behavior: "smooth" });
+}
+
 function setAge(value: number, commit: boolean) {
   age = clamp(Math.round(value || 41), MIN_AGE, MAX_AGE);
   ageNumber.value = String(age);
   ageRange.value = String(age);
   ageRange.style.setProperty("--progress", `${((age - MIN_AGE) / (MAX_AGE - MIN_AGE)) * 100}%`);
-  if (commit) { updateUrl(); render(); }
+  if (commit) {
+    updateUrl();
+    render();
+  }
 }
 
 function render() {
@@ -64,7 +73,10 @@ function render() {
   let inserted = false;
   const html: string[] = [];
   for (const deathAge of [...grouped.keys()].sort((a, b) => a - b)) {
-    if (!inserted && deathAge >= age) { html.push(userMarker()); inserted = true; }
+    if (!inserted && deathAge >= age) {
+      html.push(userMarker());
+      inserted = true;
+    }
     html.push(ageBlock(deathAge, grouped.get(deathAge)!, deathAge > age));
   }
   if (!inserted) html.push(userMarker());
@@ -77,7 +89,7 @@ function ageBlock(deathAge: number, entries: Person[], beyond: boolean) {
 }
 
 function personCard(person: Person) {
-  return `<article class="person"><h3>${person.name}</h3><div class="meta"><span class="country">${person.country}</span><span class="category category--${person.category}"><i></i>${categoryLabel[person.category]}</span></div><p>${person.summary}</p></article>`;
+  return `<article class="person"><h3>${person.name}</h3><div class="meta"><span class="country">${person.nationality}</span><span class="category category--${person.category}"><i></i>${categoryLabel[person.category]}</span></div><p>${person.summary}</p></article>`;
 }
 
 function userMarker() {
@@ -86,14 +98,51 @@ function userMarker() {
 
 function selectPeople() {
   const byAge = new Map<number, Person[]>();
-  for (const person of people) { const group = byAge.get(person.deathAge) ?? []; group.push(person); byAge.set(person.deathAge, group); }
+  for (const person of people) {
+    const group = byAge.get(person.deathAge) ?? [];
+    group.push(person);
+    byAge.set(person.deathAge, group);
+  }
+
   const chosen: Person[] = [];
-  for (const [deathAge, group] of byAge) {
-    const rng = mulberry32(hash(`${seed}:${deathAge}`));
-    const pool = [...group];
-    for (let i = 0; i < Math.min(3, pool.length); i++) {
-      const index = Math.floor(rng() * pool.length);
-      chosen.push(pool.splice(index, 1)[0]);
+  const genderCount = { woman: 0, man: 0 };
+  const recentCategories: string[] = [];
+  const recentNationalities: string[] = [];
+
+  for (const deathAge of [...byAge.keys()].sort((a, b) => a - b)) {
+    const pool = [...byAge.get(deathAge)!];
+    const atThisAge: Person[] = [];
+    for (let slot = 0; slot < Math.min(MAX_PER_AGE, pool.length); slot++) {
+      let best = pool[0];
+      let bestScore = -Infinity;
+      for (const candidate of pool) {
+        const rng = mulberry32(hash(`${seed}:${deathAge}:${slot}:${candidate.id}`));
+        let score = rng();
+        if (candidate.featured) score += 0.22;
+
+        const total = genderCount.woman + genderCount.man;
+        const womanShare = total ? genderCount.woman / total : 0.5;
+        if (candidate.gender === "woman" && womanShare < 0.42) score += 0.25;
+        if (candidate.gender === "man" && womanShare > 0.58) score += 0.12;
+
+        score -= recentCategories.filter((value) => value === candidate.category).length * 0.16;
+        score -= atThisAge.filter((person) => person.category === candidate.category).length * 0.32;
+        score -= recentNationalities.filter((value) => value === candidate.nationality).length * 0.06;
+
+        if (score > bestScore) {
+          best = candidate;
+          bestScore = score;
+        }
+      }
+
+      chosen.push(best);
+      atThisAge.push(best);
+      genderCount[best.gender]++;
+      recentCategories.push(best.category);
+      recentNationalities.push(best.nationality);
+      if (recentCategories.length > 8) recentCategories.shift();
+      if (recentNationalities.length > 8) recentNationalities.shift();
+      pool.splice(pool.indexOf(best), 1);
     }
   }
   return chosen;
@@ -105,6 +154,26 @@ function updateUrl() {
   url.searchParams.set("seed", String(seed));
   history.replaceState(null, "", url);
 }
-function clamp(v: number, lo: number, hi: number) { return Math.min(hi, Math.max(lo, v)); }
-function hash(value: string) { let h = 2166136261; for (const c of value) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
-function mulberry32(a: number) { return () => { a |= 0; a = a + 0x6d2b79f5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function clamp(v: number, lo: number, hi: number) {
+  return Math.min(hi, Math.max(lo, v));
+}
+
+function hash(value: string) {
+  let h = 2166136261;
+  for (const c of value) {
+    h ^= c.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(a: number) {
+  return () => {
+    a |= 0;
+    a = a + 0x6d2b79f5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
