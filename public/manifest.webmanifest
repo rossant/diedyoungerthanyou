@@ -1,7 +1,7 @@
 {
   "name": "Died Younger Than You",
   "short_name": "Died Younger",
-  "description": "Remarkable lives arranged by the age at which people died.",
+  "description": "Famous people arranged by the age at which they died.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#080b0e",

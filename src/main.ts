@@ -25,9 +25,9 @@ app.innerHTML = `
     <div class="hero-stage">
       <div class="hero-copy">
         <span class="kicker-rule" aria-hidden="true"></span>
-        <p class="kicker">ONE AGE.<br>MANY LIVES.</p>
+        <p class="kicker">A TIMELINE OF<br>FAMOUS LIVES</p>
         <h1>How old<br> are you?</h1>
-        <p class="hero-promise">Discover famous people who died younger than you and what they achieved in the time they had.</p>
+        <p class="hero-promise">Enter your age to find famous people who died younger than you and read about what they did.</p>
       </div>
       <div class="age-control">
         <label class="sr-only" for="age-number">Your age</label>
@@ -41,12 +41,12 @@ app.innerHTML = `
   <section class="timeline-wrap" id="timeline" aria-labelledby="timeline-title">
     <header class="timeline-head">
       <h2 id="timeline-title"></h2>
-      <p>Different lives. A wider perspective.</p>
+      <p>The list mixes familiar names with people you may not know.</p>
     </header>
     <p class="sr-only" id="timeline-status" aria-live="polite"></p>
     <div class="timeline" id="timeline-list"></div>
     <footer class="about" id="about">
-      <p><strong>About</strong> A reflection on time, not a ranking of lives. Ages use the dates in each linked source.</p>
+      <p><strong>About this project</strong> It compares lifespans rather than lives, using the dates linked on each entry.</p>
     </footer>
   </section>
   <div class="menu-backdrop" hidden></div>
