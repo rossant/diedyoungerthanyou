@@ -7,7 +7,7 @@ The site is intentionally small: Vite + TypeScript + plain HTML/CSS, with no fra
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -15,8 +15,17 @@ npm run dev
 
 ```bash
 npm run validate
+npm run validate:sources
+npm test
+npm run check
 npm run build
 ```
+
+`npm ci` uses the committed lockfile for reproducible installs. The test suite covers date-at-death edge cases and verifies that every curated record's derived age matches its source dates.
+
+`npm run validate:sources` optionally checks all curated Wikipedia links against the live MediaWiki API; it is kept out of CI to avoid an external availability dependency.
+
+`npm run check` runs formatting, linting, tests, data validation, TypeScript, and the production build—the same gate used for pull requests.
 
 The build validates the curated dataset before TypeScript and Vite run. It checks row shape, unique IDs, categories, dates, plausible ages and a minimum representation threshold.
 

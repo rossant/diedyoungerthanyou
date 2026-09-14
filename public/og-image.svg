@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#080b0e"/>
+  <path d="M88 520V110h22v388h310v22z" fill="#d85a3a"/>
+  <circle cx="420" cy="110" r="16" fill="#e8e2d6"/>
+  <text x="88" y="190" fill="#e8e2d6" font-family="Arial, sans-serif" font-size="28" letter-spacing="8">SAME TIME. DIFFERENT LIVES.</text>
+  <text x="88" y="330" fill="#e8e2d6" font-family="Georgia, serif" font-size="92" font-weight="700">DIED YOUNGER</text>
+  <text x="88" y="430" fill="#e8e2d6" font-family="Georgia, serif" font-size="92" font-weight="700">THAN YOU</text>
+  <text x="88" y="570" fill="#a7aaa8" font-family="Arial, sans-serif" font-size="24">Remarkable lives, arranged by age.</text>
+</svg>

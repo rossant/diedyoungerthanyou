@@ -2,18 +2,74 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#080b0e" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="See remarkable people who died younger than you, and what they accomplished in the time they had." />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta
+      name="description"
+      content="See remarkable people who died younger than you, and what they accomplished in the time they had."
+    />
+    <meta name="application-name" content="Died Younger Than You" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Died Younger Than You" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link
+      rel="canonical"
+      href="https://rossant.github.io/diedyoungerthanyou/"
+    />
     <meta property="og:title" content="Died Younger Than You" />
-    <meta property="og:description" content="See remarkable people who died younger than you, and what they accomplished in the time they had." />
+    <meta
+      property="og:description"
+      content="See remarkable people who died younger than you, and what they accomplished in the time they had."
+    />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary" />
+    <meta
+      property="og:url"
+      content="https://rossant.github.io/diedyoungerthanyou/"
+    />
+    <meta
+      property="og:image"
+      content="https://rossant.github.io/diedyoungerthanyou/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Died Younger Than You — remarkable lives arranged by age"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Died Younger Than You" />
+    <meta
+      name="twitter:description"
+      content="See remarkable people who died younger than you, and what they accomplished in the time they had."
+    />
+    <meta
+      name="twitter:image"
+      content="https://rossant.github.io/diedyoungerthanyou/og-image.png"
+    />
     <title>Died Younger Than You</title>
   </head>
   <body>
     <main id="app"></main>
+    <noscript>
+      <section aria-labelledby="no-script-title">
+        <h1 id="no-script-title">Died Younger Than You</h1>
+        <p>
+          Explore remarkable lives arranged by the age at which people died.
+          Enable JavaScript to enter your age and explore the interactive
+          timeline.
+        </p>
+      </section>
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
